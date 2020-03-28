@@ -1,21 +1,18 @@
-const express = require("express");
+const express = require('express');
 const path = require ('path');
-const fs = require('fs');
 let app = express();
-
-let notes = require ('./develop/db/db.json');
-
-let PORT = 3000;
+const fs = require('fs');
 
 
+let noteData = require ('./develop/db/db.json');
+const PORT = process.env.PORT || 4040;
 
+
+
+
+app.use(express.static("develop/public"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
-// empty notes
-
-
-
 
 
 //Basic route
@@ -27,26 +24,31 @@ app.get("/", function(req, res) {
     res.sendFile(path.join(__dirname, "notes.html"));
   });
 
-  
-
-
-  // Displays all characters 
-app.get("/api/notes", function(req, res) {
-    return res.json(notes);
-  });
-  
-  
-  
-
-
-        app.post("/api/notes", function(req, res) {
-    
-    var newNotes = req.body;
-    console.log(newNotes);
-            notes.push(newNotes);
-                res.json(newNotes);
+  app.get("/api/notes", function(req, res) {
+    return res.json(noteData);
   });
 
+  app.post('/api/notes', (req, res) => {
+    noteData.push(req.body);
+    noteData.forEach((note, i) => {
+        note.id = i + 1;
+    })
+    let newNote = JSON.stringify(noteData);
+    fs.writeFileSync('./develop/db/db.json', newNote);
+
+    res.json(noteData);
+})
+
+app.delete('/api/notes/:id', (req,res)=>{
+  let filtered= noteData.filter(note=>note.id !==parseInt(req.params.id));
+  console.log(filtered)
+  fs.writeFileSync('./develop/db/db.json', JSON.stringify(filtered))
+
+  res.send('localhost:4040/notes');
+})
+
+
+  
 
 
 app.listen(PORT, function(){
